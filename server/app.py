@@ -2,7 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from api.routes import api_blueprint
-from models.models import Base
+from models.models import db
 
 db = SQLAlchemy()
 migrate = Migrate()

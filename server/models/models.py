@@ -1,24 +1,32 @@
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
-# models.py
+db = SQLAlchemy()
 
-# This file contains the database models for the LibVault application.
+class User(db.Model):
+  __tablename__ = 'users'
+  id = db.Column(db.Integer, primary_key=True)
+  email = db.Column(db.String(255), unique=True, nullable=False)
+  password_hash = db.Column(db.String(255), nullable=False)
+  created_at = db.Column(db.DateTime, default=datetime.utcnow)
+  articles = db.relationship('Article', backref='author', lazy=True)
 
-from sqlalchemy import Column, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
+  def set_password(self, password):
+    self.password_hash = generate_password_hash(password)
 
-Base = declarative_base()
+  def check_password(self, password):
+    return check_password_hash(self.password_hash, password)
+      
+class Article(db.Model):
+  __tablename__ = 'articles'
+  id = db.Column(db.Integer, primary_key=True)
+  url = db.Column(db.String(500), unique=True, nullable=False)
+  title = db.Column(db.String(255), nullable=False)
+  content = db.Column(db.Text, nullable=False)
+  summary = db.Column(db.Text)
+  category = db.Column(db.String(100))
+  user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-class Article(Base):
-    __tablename__ = 'articles'
-
-    id = Column(Integer, primary_key=True)
-    url = Column(String, unique=True, nullable=False)
-    title = Column(String, nullable=False)
-    content = Column(Text, nullable=False)
-    summary = Column(Text)
-    category = Column(String)
-
-    def __repr__(self):
-        return f'<Article(id={self.id}, title={self.title})>'
-
-# Add more models as needed
+  def __repr__(self):
+    return f'<Article(id={self.id}, title={self.title})>'
