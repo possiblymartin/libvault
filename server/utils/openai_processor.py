@@ -1,8 +1,13 @@
 import os
+from dotenv import load_dotenv
 import json
-import openai
+import time
+from openai import OpenAI
 
-openai.api_key = os.getenv("OPEN_API_KEY")
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 def summarize_and_sort(text, user_categories):
   categories_str = ','.join(user_categories)
@@ -17,27 +22,26 @@ def summarize_and_sort(text, user_categories):
   )
 
   try:
-    response = openai.ChatCompletion.create(
-      model="gpt-3.5-turbo",
-      messages=[
-        {
-         "role": "system", 
-         "content": "You are an assistant that summarizes articles and categorizes them based on user provided categories."
-        },
-        {
-         "role": "user", 
-         "content": prompt
-        }
-      ],
-      temperature=0.7,
-      max_tokens=200
-    )
-    answer_str = response["choices"][0]["message"]["content"]
+    time.sleep(10)
+    response = client.chat.completions.create(model="gpt-3.5-turbo",
+    messages=[
+      {
+       "role": "system", 
+       "content": "You are an assistant that summarizes articles and categorizes them based on user provided categories."
+      },
+      {
+       "role": "user", 
+       "content": prompt
+      }
+    ],
+    temperature=0.7,
+    max_tokens=200)
+    answer_str = response.choices[0].message.content
     result = json.loads(answer_str)
   except Exception as e:
     result = {
       "error": f"OpenAI processing failed: {str(e)}",
       "raw": answer_str if 'answer_str' in locals() else None
     }
-  
+
   return result
