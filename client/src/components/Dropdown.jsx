@@ -10,7 +10,7 @@ const Dropdown = ({ label, items }) => {
       onMouseEnter={() => setIsOpen(true)} 
       onMouseLeave={() => setIsOpen(false)}
     >
-      <button className={`flex items-center text-gray-600 hover:bg-gray-100 rounded-md px-3 py-1 font-medium focus:outline-none ${isOpen ? 'bg-gray-100' : ''}`}>
+      <button className={`flex items-center text-gray-600 hover:bg-gray-100 rounded-md px-3 py-1 font-medium focus:outline-none ${isOpen ? 'bg-gray-100' : ''} cursor-pointer`}>
         <span>{label}</span>
         <span className="ml-1 text-[10px]">{isOpen ? <FaChevronUp /> : <FaChevronDown />}</span>
       </button>
