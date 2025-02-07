@@ -1,14 +1,40 @@
-import { useState } from 'react'
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+import Home from './pages/Home';
+import Login from './pages/Login';
+
+import PrivateRoute from './components/PrivateRoute';
+import PublicRoute from './components/PublicRoute';
+
 import './styles/App.css'
-import MainLayout from './layouts/MainLayout'
 
 function App() {
   return (
-  <MainLayout>
-    <div className="text-black">
-      <h1>Hello</h1>
-    </div>
-  </MainLayout>
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+        {/*
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+              </PrivateRoute>
+            }
+          />
+        */}
+
+        <Route path="/" element={<Home />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
