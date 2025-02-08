@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
+import ArticleDetail from './pages/ArticleDetail';
 import Login from './pages/Login';
 
 import PrivateRoute from './components/PrivateRoute';
@@ -21,16 +23,22 @@ function App() {
             </PublicRoute>
           }
         />
-        {/*
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-              </PrivateRoute>
-            }
-          />
-        */}
-
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/articles/:articleId"
+          element={
+            <PrivateRoute>
+              <ArticleDetail />
+            </PrivateRoute>
+          }
+        />
         <Route path="/" element={<Home />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
