@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "libvault",
+  "version": "1.0",
+  "description": "Vault your web articles and build an online reference library at the tip of your fingers.",
+  "permissions": [
+    "activeTab", 
+    "scripting", 
+    "storage",
+    "identity"
+  ],
+  "host_permissions": [
+    "http://localhost:5001/*",
+    "https://accounts.google.com/*"
+  ],
+  "oauth2": {
+    "client_id": "149698113919-rpd86d561bljla4g8mqq0h4mi1p876h4.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html"
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["src/content/content.js"],
+    "css": ["assets/styles/tailwind.css"]
+  }],
+  "web_accessible_resources": [{
+    "resources": ["assets/styles/*"],
+    "matches": ["<all_urls>"]
+  }]
+}

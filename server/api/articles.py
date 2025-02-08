@@ -3,11 +3,56 @@ from models.models import db, Article, Category, User
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from bs4 import BeautifulSoup
 from utils.openai_processor import summarize_and_sort
+from utils.extensions import limiter
 import requests
+import re
 
 articles_blueprint = Blueprint('articles', __name__)
 
+@articles_blueprint.route('/categories', methods=['GET'])
+@jwt_required()
+def get_categories():
+  user_id = get_jwt_identity()
+  categories = Category.query.filter_by(user_id=user_id).all()
+  return jsonify([{"id": c.id, "name": c.name} for c in categories]), 200
+
+@articles_blueprint.route('/analyze-content', methods=['GET'])
+@limiter.limit("5 per minute")
+@jwt_required()
+def analyze_content():
+  """Analyze content without URL processing"""
+  data = request.json
+  content = data.get('content', '')[:10000] # Limit input size
+  user_id = get_jwt_identity()
+
+  if not content:
+    return jsonify({"error": "no content provided"}), 400
+
+  try:
+    # Get user's existing categories
+    user_categories = [cat.name for cat in Category.query.filter_by(user_id=user_id).all()]
+
+    # Process with OpenAI
+    processed = summarize_and_sort(content, user_categories)
+
+    if 'error' in processed:
+      return jsonify({"error": processed["error"]}), 400
+
+    return jsonify({
+      "summary": processed.get('summary', []),
+      "category": processed.get('category', 'Uncategorized'),
+      "is_new_category": processed.get('is_new_category', False)
+    }), 200
+  
+  except Exception as e:
+    return jsonify({
+      "error": f"Content processing failed: {str(e)}",
+      "status": "error"
+    }), 500
+
+
 @articles_blueprint.route('/process-url', methods=['POST'])
+@limiter.limit("5 per minute")
 @jwt_required()
 def process_url():
   data = request.get_json()
@@ -20,9 +65,32 @@ def process_url():
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
 
+    for video_div in soup.find_all('div', class_=re.compile(r'video|player', re.I)):
+      video_div.decompose()
+
+    for msg in soup.find_all(string=re.compile(r'This video can not be played', re.I)):
+      parent = msg.find_parent()
+      if parent:
+        parent.decompose()
+
     title = soup.find('h1').get_text(strip=True) if soup.find('h1') else "Untitled"
-    article_body = soup.find('article') or soup.find('div', class_='article-body')
-    content = ' '.join([p.get_text(strip=True) for p in article_body.find_all('p')]) if article_body else ""
+    article_body = soup.find('article') or \
+              soup.find('div', class_=lambda x: x and 'article' in x) or \
+              soup.find('div', id=re.compile(r'main|content', re.I))
+
+    structured_content = []
+    # Get text with original line breaks
+    if article_body:
+      content_elements = [
+        element.get_text(separator = ' ', strip=False)
+        for element in article_body.find_all(['p', 'h2', 'h3'])
+      ]
+      content = '\n\n'.join(content_elements).strip()
+    else:
+      content = soup.get_text(separator='\n', strip=False).strip()
+      
+    if not content:
+      return jsonify({"error": "No article found at this URL"}), 400
   except Exception as e:
     return jsonify({"error": f"Failed to scrape article: {str(e)}"}), 400
   
@@ -62,6 +130,7 @@ def process_url():
     db.session.add(new_article)
     db.session.commit()
   except Exception as e:
+    db.session.rollback()
     return jsonify({"error": f"Failed to save article: {str(e)}"}), 500
   
   return jsonify({
@@ -75,29 +144,26 @@ def process_url():
     }
   }), 201
 
-@articles_blueprint.route('/articles', methods=["GET", "POST", "OPTIONS"])
+@articles_blueprint.route('/articles', methods=['GET'])
+@jwt_required()
 def get_articles():
-  if request.method == "OPTIONS":
-    return jsonify({}), 200
+  user_id = get_jwt_identity()
+  category_id = request.args.get('category')
 
-  @jwt_required()
-  def protected_route():
-    user_id = get_jwt_identity()
-    articles = Article.query.filter_by(user_id=user_id).all()
+  query = Article.query.filter_by(user_id=user_id)
+  if category_id:
+    query = query.filter_by(category_id=category_id)
+  
+  articles = query.all()
 
-    articles_by_category = {}
-    for article in articles:
-      category_name = article.category_obj.name if article.category_obj else "Uncategorized"
-      if category_name not in articles_by_category:
-        articles_by_category[category_name] = []
-        articles_by_category[category_name].append({
-          "id": article.id,
-          "title": article.title,
-          "summary": article.summary,
-          "url": article.url
-        })
-    return jsonify(articles_by_category), 200
-  return protected_route()
+  return jsonify([{
+    "id": a.id,
+    "title": a.title,
+    "summary": a.summary,
+    "url": a.url,
+    "content": a.content
+  } for a in articles]), 200
+
 
 @articles_blueprint.route('/articles/<int:article_id>', methods=['GET'])
 @jwt_required()
