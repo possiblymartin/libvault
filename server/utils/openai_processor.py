@@ -4,6 +4,7 @@ import json
 import difflib
 import time
 from openai import OpenAI
+import re
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -30,19 +31,21 @@ def assign_category(predicted_category, user_categories, threshold=0.7):
 def summarize_and_sort(text, user_categories):
   categories_str = ','.join(user_categories)
   prompt = (
-    "You are an assistant whose job is to summarize articles and determine the best category for the article from a given list "
-    "of user-generated categories.\n\n"
+    "You are an assistant whose job is to summarize articles and determine the best category for the article "
+    "from a given list of user-generated categories.\n\n"
     "Instructions:\n"
     "1. Summarize the article in exactly 3 concise bullet points.\n"
     "2. Given the user-generated categories: " + categories_str + ", assess whether the article fits into one of those categories. "
     "If it does, return that category exactly as provided. If it does not, suggest a new category that best describes the article; "
     "this new category must be a single word.\n\n"
-    "Return your answer in JSON format with two keys: 'summary' (an array of bullet points) and 'category' (a string).\n\n"
+    "Return your answer in JSON format with two keys: 'summary' (an array of bullet points) and 'category' (a string).\n"
+    "For example: {\"summary\": [\"Bullet 1\", \"Bullet 2\", \"Bullet 3\"], \"category\": \"News\"}\n\n"
     "Article Text:\n" + text
   )
 
+
   try:
-    time.sleep(10)
+    # time.sleep(10)
     response = client.chat.completions.create(
       model="gpt-3.5-turbo",
       messages=[
@@ -62,7 +65,15 @@ def summarize_and_sort(text, user_categories):
     if answer_str.startswith("```"):
       answer_str = re.sub(r"^```(json)?\n", "", answer_str)
       answer_str = re.sub(r"\n```")
-    result = json.loads(answer_str)
+    try:
+      result = json.loads(answer_str)
+    except json.JSONDecodeError as json_err:
+      result = {
+        "error": f"JSON parsing error: {str(json_err)}",
+        "raw": answer_str,
+        "prompt": prompt
+      }
+      return result
   except Exception as e:
     result = {
       "error": f"OpenAI processing failed: {str(e)}",

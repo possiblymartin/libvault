@@ -49,7 +49,7 @@ const CategoryArticles = () => {
               onClick={() => navigate(`/articles/${article.id}`)}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+              className="text-gray-800 dark:text-gray-200 hover:bg-gray-800 p-1 rounded font-medium cursor-pointer"
             >
               View Full Article →
             </a>

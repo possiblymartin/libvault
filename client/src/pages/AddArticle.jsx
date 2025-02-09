@@ -33,7 +33,7 @@ const AddArticle = ({ onAdd }) => {
           className="flex-1 p-3 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           required
         />
-        <button type="submit" className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 cursor-pointer" disabled={loading}>
+        <button type="submit" className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 disabled:opacity-50 cursor-pointer transition-all duration-300 ease-in-out" disabled={loading}>
           {loading ? 'Processing...' : 'Summarize'}
         </button>
       </form>
