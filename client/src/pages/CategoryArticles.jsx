@@ -33,23 +33,23 @@ const CategoryArticles = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Articles</h2>
+      <h2 className="text-2xl font-bold text-black dark:text-gray-200">Articles</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Add array check before mapping */}
         {Array.isArray(articles) && articles.map((article) => (
-          <div key={article.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
-            <h3 className="text-lg font-semibold mb-2">{article.title}</h3>
+          <div key={article.id} className="bg-white dark:bg-black rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
+            <h3 className="text-lg text-black dark:text-gray-300 font-semibold mb-2">{article.title}</h3>
             <div className="space-y-2 mb-4">
               {/* Add optional chaining for summary */}
               {article?.summary?.split('\n')?.map((point, index) => (
-                <p key={index} className="text-gray-600">• {point}</p>
+                <p key={index} className="text-gray-600 dark:text-gray-400">• {point}</p>
               ))}
             </div>
             <a
               onClick={() => navigate(`/articles/${article.id}`)}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 font-medium"
+              className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
             >
               View Full Article →
             </a>

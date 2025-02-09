@@ -3,7 +3,7 @@ from authlib.integrations.flask_client import OAuth
 from models.models import db, User
 from flask_jwt_extended import create_access_token
 import os
-from dotend import load_dotenv
+from dotenv import load_dotenv
 
 load_dotenv()
 

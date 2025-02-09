@@ -32,47 +32,47 @@ const FullArticle = () => {
   if (!article) return <div className="p-8 text-red-500">Article not found</div>;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-amber-50 dark:bg-black">
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Header Section */}
         <div className="mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="text-gray-600 hover:text-gray-800 mb-4 inline-flex items-center"
+            className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-500 mb-4 inline-flex items-center cursor-pointer"
           >
             ← Back to articles
           </button>
           
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-4xl font-bold text-gray-900">{article.title}</h1>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-300">{article.title}</h1>
             <a
               href={article.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-600 hover:text-blue-600 flex items-center gap-2"
+              className="text-gray-600 dark:text-gray-200 hover:text-blue-600 flex items-center gap-2"
             >
               <FaExternalLinkAlt className="inline-block" />
               <span>Visit Original</span>
             </a>
           </div>
           
-          <div className="border-b border-gray-200"></div>
+          <div className="border-b border-gray-200 dark:border-gray-600"></div>
         </div>
 
         {/* Content Section */}
         <div className="prose max-w-none">
           {/* Summary Section */}
           {article.summary && (
-            <div className="mb-12 p-6 bg-gray-50 rounded-xl">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800">AI Summary</h3>
-              <ul className="space-y-3 list-disc list-inside text-gray-600">
+            <div className="mb-12 p-6 bg-gray-50 dark:bg-gray-800 rounded-xl">
+              <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-300">AI Summary</h3>
+              <ul className="space-y-3 list-disc list-inside text-gray-600 dark:text-gray-300">
                 {article.summary.split('\n').map((point, index) => (
                   <li key={index}>{point}</li>
                 ))}
               </ul>
             </div>
           )}
-          <div className="text-gray-700 whitespace-pre-line font-serif - text-lg leading-relaxed">
+          <div className="text-gray-700 dark:text-gray-400 whitespace-pre-line font-serif - text-lg leading-relaxed">
             {article.content.split('\n\n').map((paragraph, index) => (
               <p key={index} className="mb-4">
                 {paragraph}

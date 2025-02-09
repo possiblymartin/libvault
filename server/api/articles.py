@@ -60,37 +60,33 @@ def process_url():
   user_id = get_jwt_identity()
   current_user = User.query.get(user_id)
 
-  # Scrape article's content
   try:
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    for video_div in soup.find_all('div', class_=re.compile(r'video|player', re.I)):
-      video_div.decompose()
+    # Get the page title
+    title = soup.title.get_text(strip=True) if soup.title else "Untitled"
 
-    for msg in soup.find_all(string=re.compile(r'This video can not be played', re.I)):
-      parent = msg.find_parent()
-      if parent:
-        parent.decompose()
-
-    title = soup.find('h1').get_text(strip=True) if soup.find('h1') else "Untitled"
-    article_body = soup.find('article') or \
-              soup.find('div', class_=lambda x: x and 'article' in x) or \
-              soup.find('div', id=re.compile(r'main|content', re.I))
-
-    structured_content = []
-    # Get text with original line breaks
-    if article_body:
-      content_elements = [
-        element.get_text(separator = ' ', strip=False)
-        for element in article_body.find_all(['p', 'h2', 'h3'])
-      ]
-      content = '\n\n'.join(content_elements).strip()
+    article_element = soup.find('article')
+    if article_element:
+      for tag in article_element.find_all(["script", "style", "nav", "header", "footer"]):
+        tag.decompose()
+      content = article_element.get_text(separator="\n", strip=True)
     else:
-      content = soup.get_text(separator='\n', strip=False).strip()
-      
+      content_wrapper = soup.find('div', id=re.compile(r'content|main', re.I)) or \
+                        soup.find('div', class_=re.compile(r'content|main|article', re.I))
+      if content_wrapper:
+        for tag in content_wrapper.find_all(["script", "style", "nav", "header", "footer"]):
+          tag.decompose()
+        content = content_wrapper.get_text(separator="\n", strip=True)
+      else:
+        for tag in soup(["script", "style", "nav", "header", "footer"]):
+          tag.decompose()
+        content = soup.get_text(separator="\n", strip=True)
+
     if not content:
       return jsonify({"error": "No article found at this URL"}), 400
+      
   except Exception as e:
     return jsonify({"error": f"Failed to scrape article: {str(e)}"}), 400
   

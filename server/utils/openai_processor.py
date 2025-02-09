@@ -59,6 +59,9 @@ def summarize_and_sort(text, user_categories):
       max_tokens=200
     )
     answer_str = response.choices[0].message.content
+    if answer_str.startswith("```"):
+      answer_str = re.sub(r"^```(json)?\n", "", answer_str)
+      answer_str = re.sub(r"\n```")
     result = json.loads(answer_str)
   except Exception as e:
     result = {
