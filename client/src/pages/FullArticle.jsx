@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FaExternalLinkAlt } from 'react-icons/fa';
+import Breadcrumb from '../components/Breadcrumb';
 
 const FullArticle = () => {
   const { articleId } = useParams();
@@ -31,9 +32,18 @@ const FullArticle = () => {
   if (loading) return <div className="p-8 text-gray-500">Loading article...</div>;
   if (!article) return <div className="p-8 text-red-500">Article not found</div>;
 
+  const breadcrumbItems = [
+    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Articles', href: '/articles' },
+    { name: article.title }
+  ];
+
   return (
     <div className="min-h-screen bg-amber-50 dark:bg-black grayscale">
       <div className="max-w-3xl mx-auto px-4 py-8">
+        {/* Breadcrumb Section */}
+        <Breadcrumb items={breadcrumbItems} />
+        
         {/* Header Section */}
         <div className="mb-8">
           <button
@@ -43,7 +53,9 @@ const FullArticle = () => {
             ← Back to articles
           </button>
           <div className="flex items-center justify-between mb-4 space-x-4">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-300 flex-1 break-words pr-4">{article.title}</h1>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-300 flex-1 break-words pr-4">
+              {article.title}
+            </h1>
             <a
               href={article.url}
               target="_blank"
@@ -70,14 +82,13 @@ const FullArticle = () => {
               </ul>
             </div>
           )}
-          <div className="text-gray-700 dark:text-gray-400 whitespace-pre-line font-serif - text-lg leading-relaxed">
+          <div className="text-gray-700 dark:text-gray-400 whitespace-pre-line font-serif text-lg leading-relaxed">
             {article.content.split('\n\n').map((paragraph, index) => (
               <p key={index} className="mb-4">
                 {paragraph}
               </p>
             ))}
           </div>
-          
         </div>
       </div>
     </div>

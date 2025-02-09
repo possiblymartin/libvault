@@ -3,8 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
 const CategoryArticles = () => {
+  const [categories, setCategories] = useState([])
   const [articles, setArticles] = useState([]);
   const { categoryId } = useParams();
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,45 +20,74 @@ const CategoryArticles = () => {
             params: { category: categoryId }
           }
         );
-        
-        // Ensure we're getting an array
+
+        // Ensure an array is set
         const data = Array.isArray(response.data) ? response.data : [];
         setArticles(data);
       } catch (err) {
         console.error('Error fetching articles:', err);
-        setArticles([]); // Reset to empty array on error
+        setArticles([]);
       }
     };
-    
+
     if (categoryId) fetchArticles();
   }, [categoryId]);
 
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/categories`,
+          { headers: { Authorization: `Bearer ${token}`}}
+        );
+        setCategories(response.data);
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCategories();
+  }, [])
+  
+  const selectedCategory = categories.find(
+    (c) => String(c.id) === categoryId
+  );
+
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-black dark:text-gray-200">Articles</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Add array check before mapping */}
-        {Array.isArray(articles) && articles.map((article) => (
-          <div key={article.id} className="bg-white dark:bg-black rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
-            <h3 className="text-lg text-black dark:text-gray-300 font-semibold mb-2">{article.title}</h3>
-            <div className="space-y-2 mb-4">
-              {/* Add optional chaining for summary */}
-              {article?.summary?.split('\n')?.map((point, index) => (
-                <p key={index} className="text-gray-600 dark:text-gray-400">• {point}</p>
-              ))}
+      {selectedCategory ? (
+        <h2 className="text-2xl font-bold text-black dark:text-gray-200">{selectedCategory.name}</h2>
+      ) : loading ? (
+        <h2 className="text-2xl font-bold text-black dark:text-gray-200">
+          Loading Category...
+        </h2>
+      ) : null}
+      <ul className="divide-y divide-gray-200 dark:divide-gray-800">
+        {articles.map((article) => (
+          <li key={article.id} className="py-4">
+            <div className="flex flex-col">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                {article.title}
+              </h3>
+              <p className="mt-1 text-gray-600 dark:text-gray-400 line-clamp-2">
+                {article.summary}
+              </p>
+              <div className="mt-3">
+                <button 
+                  onClick={() => navigate(`/articles/${article.id}`)}
+                  className="text-blue-600 hover:underline"
+                >
+                  Read More →
+                </button>
+              </div>
             </div>
-            <a
-              onClick={() => navigate(`/articles/${article.id}`)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-800 dark:text-gray-200 hover:bg-gray-800 p-1 rounded font-medium cursor-pointer"
-            >
-              View Full Article →
-            </a>
-          </div>
+          </li>
         ))}
-      </div>
-      {/* Show empty state */}
+      </ul>
       {articles.length === 0 && (
         <div className="text-gray-500 text-center py-8">
           No articles found in this category
