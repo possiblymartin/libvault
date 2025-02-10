@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import UniqueConstraint
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
@@ -17,6 +18,10 @@ class User(db.Model):
   articles = db.relationship('Article', backref='author', lazy=True)
   categories = db.relationship('Category', backref='owner', lazy=True)
   is_library_public = db.Column(db.Boolean, default=False)
+
+  __table_args__ = (
+    UniqueConstraint('username', name='uq_users_username'),
+  )
 
   def set_password(self, password):
     self.password_hash = generate_password_hash(password)
