@@ -1,10 +1,9 @@
 import os
-from dotenv import load_dotenv
+import re
 import json
 import difflib
-import time
+from dotenv import load_dotenv
 from openai import OpenAI
-import re
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -43,9 +42,7 @@ def summarize_and_sort(text, user_categories):
     "Article Text:\n" + text
   )
 
-
   try:
-    # time.sleep(10)
     response = client.chat.completions.create(
       model="gpt-3.5-turbo",
       messages=[
