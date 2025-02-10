@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -24,20 +24,26 @@ def create_app():
   JWTManager(app)
   CORS(
     app,
-    resources={r"/api/*": {
-      "origins": "http://localhost:5173",
+    resources={r"/*": {
+      "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
       "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       "allow_headers": ["Content-Type", "Authorization"]
     }},
     supports_credentials=True
   )
 
+  @app.before_request
+  def handle_options():
+    if request.method == 'OPTIONS':
+      return '', 200
+
   from api.routes import api_blueprint
   from api.articles import articles_blueprint
-  from api.users import users_blueprint
+  from api.users import users_api_blueprint, public_users_blueprint
   app.register_blueprint(api_blueprint, url_prefix='/api')
   app.register_blueprint(articles_blueprint, url_prefix='/api')
-  app.register_blueprint(users_blueprint)
+  app.register_blueprint(users_api_blueprint, url_prefix='/api/users')
+  app.register_blueprint(public_users_blueprint)
 
   return app
 

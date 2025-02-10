@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import AddArticle from './AddArticle';
+import SettingsModal from '../components/SettingsModal';
 
 const Dashboard = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,6 +28,10 @@ const Dashboard = () => {
 
     fetchCategories();
   }, [])
+
+  const toggleSettingsModal = () => {
+    setIsSettingsOpen(!isSettingsOpen);
+  };
 
   return (
   <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 grayscale">
@@ -48,6 +54,9 @@ const Dashboard = () => {
           </NavLink>
         ))}
       </nav>
+      <button onClick={toggleSettingsModal} className="mt-6 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition">
+        Settings
+      </button>
     </div>
 
     {/* Main Content */}
@@ -55,6 +64,10 @@ const Dashboard = () => {
       <AddArticle />
       <Outlet />
     </div>
+
+    {isSettingsOpen && (
+      <SettingsModal isOpen={isSettingsOpen} onClose={toggleSettingsModal} />
+    )}
   </div>
   );
 };

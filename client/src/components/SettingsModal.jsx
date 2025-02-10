@@ -29,7 +29,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
       const response = await axios.put(
         `${import.meta.env.VITE_API_BASE_URL}/api/users/profile`,
         formData,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
       );
       setSuccess(response.data.message);
     } catch (err) {

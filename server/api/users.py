@@ -2,9 +2,9 @@ from flask import Blueprint, request, jsonify
 from models.models import db, User, Article
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-users_blueprint = Blueprint('users', __name__)
+users_api_blueprint = Blueprint('users_api', __name__)
 
-@users_blueprint.route('/profile', methods=['GET'])
+@users_api_blueprint.route('/profile', methods=['GET'])
 @jwt_required()
 def get_profile():
   user_id = get_jwt_identity()
@@ -19,7 +19,7 @@ def get_profile():
     "avatar": user.avatar
   }), 200
 
-@users_blueprint.route('/profile', methods=['PUT'])
+@users_api_blueprint.route('/profile', methods=['PUT'])
 @jwt_required()
 def update_profile():
   user_id = get_jwt_identity()
@@ -53,7 +53,9 @@ def update_profile():
     db.session.rollback()
     return jsonify({"error": f"Failed to update profile: {str(e)}"}), 500
 
-@users_blueprint.route('/<string:username>', methods=['GET'])
+public_users_blueprint = Blueprint('public_users', __name__)
+
+@public_users_blueprint.route('/<string:username>', methods=['GET'])
 def public_library(username):
   user = User.query.filter_by(username=username).first()
   if not user:
