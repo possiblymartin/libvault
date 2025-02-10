@@ -57,6 +57,7 @@ public_users_blueprint = Blueprint('public_users', __name__)
 
 @public_users_blueprint.route('/<string:username>', methods=['GET'])
 def public_library(username):
+  """Public route that displays the username in the following format libvault.io/username"""
   user = User.query.filter_by(username=username).first()
   if not user:
     return jsonify({"error": "This user's library is private"}), 403

@@ -1,50 +1,45 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import UniqueConstraint
-from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import uuid
 
 db = SQLAlchemy()
 
 class User(db.Model):
-  __tablename__ = 'users'
   id = db.Column(db.Integer, primary_key=True)
-  email = db.Column(db.String(255), unique=True, nullable=False)
+  email = db.Column(db.String(120), unique=True, nullable=False)
   password_hash = db.Column(db.String(255), nullable=False)
-  username = db.Column(db.String(100), unique=True, nullable=False)
-  full_name = db.Column(db.String(100))
+  subscription_tier = db.Column(db.String(50), default="free") # free, pro, premium
+  subscription_status = db.Column(db.String(20), default="inactive") # active, inactive
   avatar = db.Column(db.String(200))
-  auth_provider = db.Column(db.String(20), default='email')
   created_at = db.Column(db.DateTime, default=datetime.utcnow)
-  articles = db.relationship('Article', backref='author', lazy=True)
-  categories = db.relationship('Category', backref='owner', lazy=True)
-  is_library_public = db.Column(db.Boolean, default=False)
 
-  __table_args__ = (
-    UniqueConstraint('username', name='uq_users_username'),
-  )
-
-  def set_password(self, password):
-    self.password_hash = generate_password_hash(password)
-
-  def check_password(self, password):
-    return check_password_hash(self.password_hash, password)
+  def __repr__(self):
+    return f'<User {self.email}, Tier: {self.subscription_tier}>'
 
 class Category(db.Model):
-  __tablename__ = 'categories'
   id = db.Column(db.Integer, primary_key=True)
-  name = db.Column(db.String(100), nullable=False)
-  user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-  articles = db.relationship('Article', backref='category_obj', lazy=True, foreign_keys='Article.category_id', primaryjoin='Category.id == Article.category_id')
+  name = db.Column(db.String(100), unique=True, nullable=False)
+  created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+  def __repr__(self):
+    return f'<Category {self.name}>'
       
 class Article(db.Model):
-  __tablename__ = 'articles'
   id = db.Column(db.Integer, primary_key=True)
-  url = db.Column(db.String(500), unique=True, nullable=False)
   title = db.Column(db.String(255), nullable=False)
   content = db.Column(db.Text, nullable=False)
-  summary = db.Column(db.Text)
-  category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
-  user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+  url = db.Column(db.String(500), nullable=False)
+  created_at = db.Column(db.DateTime, default=datetime.utcnow)
+  category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
+  category = db.relationship('Category', backref=db.backref('articles', lazy=True))
+  shared_link = db.Column(db.String(100), unique=True, nullable=True)
+  annotations = db.Column(db.Text, nullable=True)
+
+  def generate_shared_link(self):
+    self.shared_link = str(uuid.uuid4())
+  
+  def __repr__(self):
+    return f'<Article {self.title}>'
 
   def __repr__(self):
     return f'<Article(id={self.id}, title={self.title})>'

@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import AddArticle from './AddArticle';
 import SettingsModal from '../components/SettingsModal';
+import Sidebar from '../components/Sidebar';
+import SearchModal from '../components/SearchModal';
 
 const Dashboard = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
 
+  // First, fetch the categories (assumed not to include articles)
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/api/categories`,
-          { headers: { Authorization: `Bearer ${token}`}}
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         setCategories(response.data);
       } catch (err) {
@@ -24,51 +29,93 @@ const Dashboard = () => {
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     fetchCategories();
-  }, [])
+  }, []);
+
+  // Once categories are loaded, fetch articles for each category if not already present.
+  // We check that the first category does not have an "articles" property.
+  useEffect(() => {
+    if (!loading && categories.length > 0 && categories[0] && categories[0].articles === undefined) {
+      const fetchArticlesForCategories = async () => {
+        const token = localStorage.getItem('token');
+        const updatedCategories = await Promise.all(
+          categories.map(async (category) => {
+            try {
+              const response = await axios.get(
+                `${import.meta.env.VITE_API_BASE_URL}/api/articles`,
+                {
+                  headers: { Authorization: `Bearer ${token}` },
+                  params: { category: category.id },
+                }
+              );
+              return { ...category, articles: response.data };
+            } catch (err) {
+              console.error('Error fetching articles for category', category.id, err);
+              return { ...category, articles: [] };
+            }
+          })
+        );
+        setCategories(updatedCategories);
+      };
+      fetchArticlesForCategories();
+    }
+  }, [loading, categories]);
 
   const toggleSettingsModal = () => {
     setIsSettingsOpen(!isSettingsOpen);
   };
 
+  const handleCollapseSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
+  const handleSearch = () => {
+    setIsSearchOpen(true);
+  };
+
+  const handleCloseSearch = () => {
+    setIsSearchOpen(false);
+  };
+
+  const handleAddDashboard = () => {
+    // For example, scroll to AddArticle or simply navigate
+    navigate('/dashboard');
+  };
+
+  const handleNewCategory = () => {
+    navigate('/new-category');
+  };
+
   return (
-  <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 grayscale">
-    {/* Sidebar */}
-    <div className="w-64 bg-white dark:bg-black border-r border-gray-200 dark:border-gray-600 p-4">
-      <h2 className="text-lg font-semibold mb-4 text-black dark:text-gray-300">Categories</h2>
-      <nav className="space-y-1">
-        {categories.map((category) => (
-          <NavLink
-            key={category.id}
-            to={`/category/${category.id}`}
-            className={({ isActive }) => 
-              `block px-4 py-2 rounded-lg  
-              ${isActive ? 
-                  'bg-blue-50 text-blue-600 dark:bg-gray-900 dark:text-gray-300 transition-all duration-200 ease-in-out' : 
-                  'text-gray-600 dark:text-gray-400 hover:bg-gray-100 hover:dark:bg-gray-900 transition-all duration-200 ease-in-out'}`
-            }
-          >
-            {category.name}
-          </NavLink>
-        ))}
-      </nav>
-      <button onClick={toggleSettingsModal} className="mt-6 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition">
-        Settings
-      </button>
-    </div>
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 grayscale">
+      {/* Sidebar container: adjust width based on isSidebarCollapsed */}
+      <div className={`transition-all duration-300 ${isSidebarCollapsed ? 'w-16' : 'w-64'}`}>
+        <Sidebar 
+          categories={categories}
+          onCollapse={handleCollapseSidebar}
+          onSearch={handleSearch}
+          onAddDashboard={handleAddDashboard}
+          onNewCategory={handleNewCategory}
+          isCollapsed={isSidebarCollapsed}
+        />
+      </div>
 
-    {/* Main Content */}
-    <div className="flex-1 p-8">
-      <AddArticle />
-      <Outlet />
-    </div>
+      {/* Main Content Area */}
+      <div className="flex-1 p-8">
+        <AddArticle />
+        <Outlet />
+      </div>
 
-    {isSettingsOpen && (
-      <SettingsModal isOpen={isSettingsOpen} onClose={toggleSettingsModal} />
-    )}
-  </div>
+      {isSettingsOpen && (
+        <SettingsModal isOpen={isSettingsOpen} onClose={toggleSettingsModal} />
+      )}
+
+      {isSearchOpen && (
+        <SearchModal isOpen={isSearchOpen} onClose={handleCloseSearch} />
+      )}
+    </div>
   );
 };
 

@@ -1,164 +1,71 @@
-from flask import Blueprint, jsonify, request
-from models.models import db, Article, Category, User
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from bs4 import BeautifulSoup
-from utils.openai_processor import summarize_and_sort
-from utils.extensions import limiter
-from utils.text_helpers import extract_main_content
+from flask import Blueprint, request, jsonify
+from models.models import db, Article, Category
 import requests
+from utils.openai_processor import process_article
+import uuid
 
-articles_blueprint = Blueprint('articles', __name__)
+articles_bp = Blueprint('articles', __name__)
 
-@articles_blueprint.route('/categories', methods=['GET'])
-@jwt_required()
-def get_categories():
-  user_id = get_jwt_identity()
-  categories = Category.query.filter_by(user_id=user_id).all()
-  return jsonify([{"id": c.id, "name": c.name} for c in categories]), 200
-
-@articles_blueprint.route('/analyze-content', methods=['GET'])
-@limiter.limit("5 per minute")
-@jwt_required()
-def analyze_content():
-  """Analyze content without URL processing"""
-  data = request.json
-  content = data.get('content', '')[:10000] # Limit input size
-  user_id = get_jwt_identity()
-
-  if not content:
-    return jsonify({"error": "no content provided"}), 400
-
-  try:
-    # Get user's existing categories
-    user_categories = [cat.name for cat in Category.query.filter_by(user_id=user_id).all()]
-
-    # Process with OpenAI
-    processed = summarize_and_sort(content, user_categories)
-
-    if 'error' in processed:
-      return jsonify({"error": processed["error"]}), 400
-
-    return jsonify({
-      "summary": processed.get('summary', []),
-      "category": processed.get('category', 'Uncategorized'),
-      "is_new_category": processed.get('is_new_category', False)
-    }), 200
-  
-  except Exception as e:
-    return jsonify({
-      "error": f"Content processing failed: {str(e)}",
-      "status": "error"
-    }), 500
-
-
-@articles_blueprint.route('/process-url', methods=['POST'])
-@limiter.limit("5 per minute")
-@jwt_required()
-def process_url():
+# Add a new article with auto-category creation
+@articles_bp.route('/articles', methods=['GET'])
+def add_article():
   data = request.get_json()
+  title = data.get('title')
+  content = data.get('content')
   url = data.get('url')
-  user_id = get_jwt_identity()
-  current_user = User.query.get(user_id)
+  category_name = data.get('category', 'Uncategorized')
 
-  try:
-    response = requests.get(url)
-    html = response.text
+  if not title or not content:
+    return jsonify({'error': 'Title and content are required'}), 400
 
-    soup = BeautifulSoup(html, 'html.parser')
-    title = soup.title.get_text(strip=True) if soup.title else "Untitled"
-
-    content = extract_main_content(html)
-    if not content:
-      return jsonify({"error": "No article content found at this URL"}), 400
-
-  except Exception as e:
-    return jsonify({"error": f"Failed to scrape article: {str(e)}"}), 400
-
-  user_categories = [cat.name for cat in current_user.categories]
-
-  # Summarize and categorize the scraped content using OpenAI
-  try:
-    processed = summarize_and_sort(content, user_categories)
-    if 'error' in processed:
-      return jsonify(processed), 500
-  except Exception as e:
-    return jsonify({"error": f"Processing failed: {str(e)}"}), 500
-  
-  # Handle new category if necessary
-  if processed.get('is_new_category', False):
-    new_category = Category(
-      name=processed['category'],
-      user_id=user_id
-    )
-    db.session.add(new_category)
+  # Check if a suitable category exists, if not, create it
+  category = Category.query.filter_by(name=category_name).first()
+  if not category:
+    category = Category(name=category_name)
+    db.session.add(category)
     db.session.commit()
-    category_id = new_category.id
-  else:
-    category = Category.query.filter_by(name=processed['category'], user_id=user_id).first()
-    category_id = category.id if category else None
 
-  # Save processed article
-  try:
-    new_article = Article(
-      title=title,
-      content=content,
-      summary='\n'.join(processed['summary']),
-      url=url,
-      category_id=category_id,
-      user_id=user_id
-    )
-    db.session.add(new_article)
-    db.session.commit()
-  except Exception as e:
-    return jsonify({"error": f"Failed saving new article: {str(e)}"}), 500
-  
-  return jsonify({
-    "message": "Article processed and saved",
-    "article": {
-      "id": new_article.id,
-      "title": title,
-      "summary": processed['summary'],
-      "category": processed['category'],
-      "url": url
-    }
-  }), 201
+  new_article = Article(title=title, content=content, url=url, category_id=category.id)
+  db.session.add(new_article)
+  db.session.commit()
 
+  return jsonify({'message': 'New article added successfully', 'article_id': new_article.id}), 201
 
-@articles_blueprint.route('/articles', methods=['GET'])
-@jwt_required()
-def get_articles():
-  user_id = get_jwt_identity()
-  category_id = request.args.get('category')
+# Retrieve all articles by category
+@articles_bp.route('/categories/<int:category_id>/articles', methods=['GET'])
+def get_articles_by_category(category_id):
+  category = Category.query.get(category_id)
+  if not category:
+    return jsonify({'error': 'Category not found'}), 404
 
-  query = Article.query.filter_by(user_id=user_id)
-  if category_id:
-    query = query.filter_by(category_id=category_id)
-  
-  articles = query.all()
+  articles = Article.query.filter_by(category_id=category_id).all()
+  return jsonify([{'id': a.id, 'title': a.title, 'content': a.content, 'annotations': a.annotations} for a in articles]), 200
 
-  return jsonify([{
-    "id": a.id,
-    "title": a.title,
-    "summary": a.summary,
-    "url": a.url,
-    "content": a.content
-  } for a in articles]), 200
-
-
-@articles_blueprint.route('/articles/<int:article_id>', methods=['GET'])
-@jwt_required()
-def get_article(article_id):
-  user_id = get_jwt_identity()
-  article = Article.query.filter_by(id=article_id, user_id=user_id).first()
-
+# Get articles summary using OpenAI
+@articles_bp.route('/articles/<int:article_id>/summary', methods=['GET'])
+def summarize_article(article_id):
+  article = Article.query.get(article_id)
   if not article:
-    return jsonify({"error": "Article not found or does not exist"}), 404
+    return jsonify({'error': 'Article not found'}), 404
+  
+  summary = process_article(article.content)
+  return jsonify({'summary': summary}), 200
 
-  return jsonify({
-    "id": article.id,
-    "title": article.title,
-    "summary": article.summary,
-    "content": article.content,
-    "url": article.url,
-    "category": article.category_obj.name if article.category_obj else "Uncategorized"
-  }), 200
+# Move an article to another category
+@articles_bp.route('/articles/<int:article_id>/move', methods=['PUT'])
+def move_article(article_id):
+  data = request.get_json()
+  new_category_id = data.get('categories_id')
+
+  article = Article.query.get(article_id)
+  if not article:
+    return jsonify({'error': 'Article not found'}), 404
+  
+  category = Category.query.get(new_category_id)
+  if not category:
+    return jsonify({'error': 'Category not found'}), 404
+
+  article.category_id = new_category_id
+  db.session.commit()
+
+  return jsonify({'message': 'Article moved successfully'}), 200
