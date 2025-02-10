@@ -53,6 +53,6 @@ def login():
 def get_subscription(user_id):
   user = User.query.get(user_id)
   if not user:
-    return jsonify('error': 'User not found'), 404
+    return jsonify({'error': 'User not found'}), 404
 
   return jsonify({'subscription_tier': user.subscription_tier, 'status': user.subscription_status}), 200
