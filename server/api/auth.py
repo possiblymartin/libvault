@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from authlib.integrations.flask_client import OAuth
 from models.models import db, User
+from utils.random_username import generate_random_username
 from flask_jwt_extended import create_access_token
 import os
 from dotenv import load_dotenv
@@ -25,6 +26,7 @@ def register():
   data = request.get_json()
   email = data.get('email')
   password = data.get('password')
+  username = data.get("username") or generate_random_username()
 
   if not email or not password:
     return jsonify({'error': 'Email and password are required.'}), 400
@@ -32,12 +34,13 @@ def register():
   if User.query.filter_by(email=email).first():
     return jsonify({'error': 'Email already exists.'}), 400
 
-  user = User(email=email)
-  user.set_password(password)
+  if User.query.filter_by(username=username).first():
+    return jsonify({'error': 'Username already exists, please choose another'}), 400
 
+  user = User(email=email, username=username)
+  user.set_password(password)
   db.session.add(user)
   db.session.commit()
-
   return jsonify({'message': 'User created successfully.'}), 201
 
 @auth_blueprint.route('/login', methods=['POST'])

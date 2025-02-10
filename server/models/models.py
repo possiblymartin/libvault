@@ -9,12 +9,14 @@ class User(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   email = db.Column(db.String(255), unique=True, nullable=False)
   password_hash = db.Column(db.String(255), nullable=False)
-  name = db.Column(db.String(100))
+  username = db.Column(db.String(100), unique=True, nullable=False)
+  full_name = db.Column(db.String(100))
   avatar = db.Column(db.String(200))
   auth_provider = db.Column(db.String(20), default='email')
   created_at = db.Column(db.DateTime, default=datetime.utcnow)
   articles = db.relationship('Article', backref='author', lazy=True)
   categories = db.relationship('Category', backref='owner', lazy=True)
+  is_library_public = db.Column(db.Boolean, default=False)
 
   def set_password(self, password):
     self.password_hash = generate_password_hash(password)
