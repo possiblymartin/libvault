@@ -34,8 +34,10 @@ def create_app():
 
   from api.routes import api_blueprint
   from api.articles import articles_blueprint
+  from api.users import users_blueprint
   app.register_blueprint(api_blueprint, url_prefix='/api')
   app.register_blueprint(articles_blueprint, url_prefix='/api')
+  app.register_blueprint(users_blueprint)
 
   return app
 
