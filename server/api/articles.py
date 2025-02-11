@@ -7,7 +7,7 @@ import uuid
 articles_bp = Blueprint('articles', __name__)
 
 # Add a new article with auto-category creation
-@articles_bp.route('/articles', methods=['GET'])
+@articles_bp.route('/articles', methods=['GET', 'POST'])
 def add_article():
   data = request.get_json()
   title = data.get('title')
@@ -32,7 +32,7 @@ def add_article():
   return jsonify({'message': 'New article added successfully', 'article_id': new_article.id}), 201
 
 # Retrieve all articles by category
-@articles_bp.route('/categories/<int:category_id>/articles', methods=['GET'])
+@articles_bp.route('/categories/<int:category_id>/articles', methods=['GET', 'POST'])
 def get_articles_by_category(category_id):
   category = Category.query.get(category_id)
   if not category:
@@ -42,7 +42,7 @@ def get_articles_by_category(category_id):
   return jsonify([{'id': a.id, 'title': a.title, 'content': a.content, 'annotations': a.annotations} for a in articles]), 200
 
 # Get articles summary using OpenAI
-@articles_bp.route('/articles/<int:article_id>/summary', methods=['GET'])
+@articles_bp.route('/articles/<int:article_id>/summary', methods=['GET', 'POST'])
 def summarize_article(article_id):
   article = Article.query.get(article_id)
   if not article:

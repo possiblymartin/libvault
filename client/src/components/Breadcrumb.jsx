@@ -1,25 +1,32 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { useLocation, Link } from "react-router-dom";
 
-const Breadcrumb = ({ items }) => {
-  return (
-    <nav className="flex text-sm mb-4" aria-label="Breadcrumb">
-      {items.map((item, index) => (
-        <div key={index} className='flex items-center'>
-          {item.href ? (
-            <Link to={item.href} className='text-gray-600 hover:underline'>
-              {item.name}
-            </Link>
-          ) : (
-            <span className='text-gray-500'>{item.name}</span>
-          )}
-          {index < items.length - 1 && (
-            <span className='mx-2 text-gray-500'>/</span>
-          )}
-        </div>
-      ))}
-    </nav>
-  )
-}
+const Breadcrumb = () => {
+	const location = useLocation();
+	const paths = location.pathname.split("/").filter((path) => path);
+
+	return (
+		<nav className="p-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-md">
+			<ul className="flex space-x-2 text-sm">
+				<li>
+					<Link to="/" className="hover:underline">
+						Home
+					</Link>
+				</li>
+				{paths.map((path, index) => {
+					const fullPath = `/${paths.slice(0, index + 1).join("/")}`;
+					return (
+						<li key={fullPath} className="flex items-center">
+							<span className="mx-1">/</span>
+							<Link to={fullPath} className="hover:underline capitalize">
+								{path.replace("-", " ")}
+							</Link>
+						</li>
+					);
+				})}
+			</ul>
+		</nav>
+	);
+};
 
 export default Breadcrumb;

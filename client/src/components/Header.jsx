@@ -19,36 +19,24 @@ const Header = () => {
   }, [])
 
   return (
-    <header className={`sticky bg-white px-4 py-2 w-full text-md flex items-center justify-between z-50 transition-border ${hasScrolled ? 'border-b border-gray-300' : ''}`}>
+    <header className={`sticky px-6 py-4 w-full text-md flex items-center justify-between z-50 transition-border ${hasScrolled ? 'border-b border-gray-300' : ''}`}>
       {/* Left Section */}
       <div className="flex items-center space-x-8">
-        <div className="text-xl font-bold text-gray-800">libvault</div>
-        <nav className="flex items-center space-x-2">
-          <Dropdown
-            label="Features"
-            items={[
-              {label: 'Summarize Articles', href:'/'},
-            ]}
-          />
-          <Dropdown
-            label="Pricing"
-            items={[
-              {label: 'Free Plan', href:'/'},
-              {label: 'Pro Plan', href:'/'},
-            ]}
-          />
-          <a href="/about" className="text-gray-600 hover:bg-gray-100 rounded-md px-3 py-1">
-            About Us
-          </a>
-        </nav>
+        <div className="text-xl font-medium text-gray-400">libvault</div>
       </div>
       {/* Right Section */}
-      <div>
+      <div className="space-x-2">
         <a
           href="/login"
-          className="px-3 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800">
+          className="px-4 py-3 bg-gray-300 text-gray-900 grayscale rounded-full text-sm hover:opacity-95">
             Log In
           </a>
+        <a
+          href="/register" 
+          className="px-4 py-3 bg-gray-900 grayscale border-1 border-gray-700 text-gray-300 rounded-full text-sm hover:bg-gray-800">
+            Sign Up
+          </a>
+        
       </div>
     </header>
   );
