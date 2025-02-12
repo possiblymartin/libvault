@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from models.models import db, Article, Category
 import requests
 from utils.openai_processor import process_article
+from utils.text_helpers import extract_main_content
 import uuid
 
 articles_bp = Blueprint('articles', __name__)
@@ -50,6 +51,29 @@ def summarize_article(article_id):
   
   summary = process_article(article.content)
   return jsonify({'summary': summary}), 200
+
+@articles_bp.route('/summarize', methods=['POST'])
+def summarize_with_url():
+  data = request.get_json()
+  url = data.get('url')
+
+  if not url:
+    return jsonify({'error': 'URL is required'}), 400
+
+  try:
+    response = requests.get(url)
+    response.raise_for_status()
+    extracted_text = extract_main_content(response.text)
+  except Exception as e:
+    return jsonify({'error': f'Failed to retrieve content: {str(e)}'}), 500
+
+  summary_result = process_article(extracted_text, [])
+
+  return jsonify({
+    'summary': summary_result.get('summary'), 
+    'full_article': extracted_text
+  }), 200
+
 
 # Move an article to another category
 @articles_bp.route('/articles/<int:article_id>/move', methods=['PUT'])

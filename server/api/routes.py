@@ -116,5 +116,23 @@ def update_subscription():
 
   return jsonify({'message': 'Subscription updated', 'new_tier': user.subscription.tier}), 200
 
+@routes.route('/save-article', methods=['POST'])
+def save_article():
+  data = request.get_json()
+  user_id = data.get('user_id')
+  url = data.get('url')
+  summary = data.get('summary')
+  full_article = data.get('full_article')
 
-  
+  if not user_id:
+    return jsonify({'error', 'User ID required'}), 400
+
+  user = User.query.get(user_id)
+  if not user:
+    return jsonify({'error': 'User not found'}), 404
+
+  new_article = Article(title="Saved Article", content=full_article, url=url, category_id=None)
+  db.session.add(new_article)
+  db.session.commit()
+
+  return jsonify({'message': 'Article saved successfully', 'article_id': new_article.id}), 201
