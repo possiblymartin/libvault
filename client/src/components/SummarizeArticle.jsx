@@ -4,25 +4,22 @@ import { FaArrowRight } from "react-icons/fa6";
 
 
 const SummarizeArticle = ({ isLoggedIn, userId }) => {
+  // For the input view
   const [url, setUrl] = useState('');
-  const [summary, setSummary] = useState(null);
-  const [fullArticle, setFullArticle] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [hasSummarized, setHasSummarized] = useState (
-    localStorage.getItem("hasSummarized") === "true"
-  );
 
-  useEffect(() => {
-    if (summary || fullArticle) {
-      localStorage.setItem("hasSummarized", "true");
-      setHasSummarized(true);
-    }
-  }, [summary, fullArticle]);
+  // For the article view
+  const [summary, setSummary] = useState(null);
+  const [fullArticle, setFullArticle] = useState(null);
+
+  // Hold the article when the user is not logged in
+  const [unsavedArticle, setUnsavedArticle] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isLoggedIn && hasSummarized) {
+
+    if (!isLoggedIn && unsavedArticle) {
       setError("You must sign in to summarize more than one article.");
       return;
     }
@@ -30,7 +27,8 @@ const SummarizeArticle = ({ isLoggedIn, userId }) => {
     setError(null);
 
     try {
-      const response = await axios.post("http://127.0.0.1:5001/summarize", {url});
+      const response = await axios.post("http://127.0.0.1:5001/summarize", { url });
+
       setSummary(response.data.summary);
       setFullArticle(response.data.full_article);
 
@@ -39,53 +37,86 @@ const SummarizeArticle = ({ isLoggedIn, userId }) => {
           user_id: userId,
           url,
           summary: response.data.summary,
-          full_article: response.data.full_article,
+          full_article: response.data.full_article
         });
+      } else {
+        setUnsavedArticle({
+          url,
+          summary: response.data.summary,
+          fullArticle: response.data.full_article,
+        })
       }
     } catch (err) {
-      setError("Failed to fetch summary. Please try again")
+      setError("Failed to fetch summary. Please try again");
     } finally {
       setLoading(false);
     }
   }
 
-  return (
-    <div className="flex flex-col h-screen p-4">
-      <div className={`flex-grow p-4 ${summary ? "" : "justify-center items-center"}`}>
-        {summary && (
-          <div className="bg-gray-700 p-4 rounded-lg mb-4 text-left grayscale">
-            <h2 className="font-bold text-lg text-gray-300">Summary:</h2>
-            <ul className="list-disc list-inside text-gray-400">
-              {summary.map((point, index) => (
-                <li key={index}>(point)</li>
-              ))}
-            </ul>
-          </div>
-        )}
+  useEffect(() => {
+    const saveUnsavedArticle = async () => {
+      if (isLoggedIn && unsavedArticle) {
+        try {
+          await axios.post("http://127.0.0.1:5001/save-article", {
+            user_id: userId,
+            url: unsavedArticle.url,
+            summary: unsavedArticle.summary,
+            full_article: unsavedArticle.fullArticle,
+          });
 
-        {fullArticle && (
-          <div className="bg-gray-800 p-4 rounded-lg text-gray-300 text-left grayscale">
-            <h2 className="font-bold text-lg text-white">Full Article:</h2>
-            <p className="whitespace-pre-wrap">{fullArticle}</p>
-          </div>
-        )}
-      </div>
+          setUnsavedArticle(null);
+        } catch (err) {
+          console.error("Failed to save unsaved article:", err);
+        }
+      }
+    };
+    saveUnsavedArticle();
+  }, [isLoggedIn, unsavedArticle, userId]);
 
-        <div className={`rounded-2xl bg-gray-800 ${summary ? "fixed bottom-0 left-0": "absolute top-1/2 transform -translate-y-1/2"} text-gray-300 grayscale p-3 w-180`}>
-          <form className="justify-between flex" onSubmit={handleSubmit}>
-            <input
-              placeholder="Paste a link"
-              className="w-full text-gray-300 resize-none overflow-hidden focus:ring-0 focus:outline-none"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
-            <div className="justify-end">
-              <button className="items-center align-middle justify-center rounded-full bg-gray-200 hover:opacity-75 p-2 cursor-pointer"><FaArrowRight className="text-gray-900" /></button>
-            </div>
-          </form>
+  if (summary && fullArticle) {
+    return (
+      <div className="flex flex-col min-h-screen p-4 text-left">
+        <h1 className="text-3xl font-bold text-gray-300 mb-4">Summarized Article</h1>
+        <div className="bg-gray-700 p-4 rounded-lg mb-4">
+          <h2 className="font-bold text-lg text-white">AI Summary:</h2>
+          <ul className="list-disc list-inside text-gray-300">
+            {summary.map((point, index) => (
+              <li key={index}>{point}</li>
+            ))}
+          </ul>
         </div>
+        <div className="bg-gray-800 p-4 rounded-lg text-gray-300 mb-4">
+          <h2 className="font-bold text-lg text-white">Full Article:</h2>
+          <p className="whitespace-pre-wrap">{fullArticle}</p>
+        </div>
+        {/* You can add additional features (annotations, editing, etc.) here */}
+      </div>
+    );
+  }
+
+  // Otherwise, show the input view.
+  return (
+    <div className="flex flex-col h-screen justify-center items-center">
+      <h1 className="text-3xl font-bold text-gray-300 mb-4">Summarize an Article</h1>
+      <div className="w-full max-w-md">
+        <form onSubmit={handleSubmit} className="flex bg-gray-800 p-3 rounded-lg">
+          <input
+            type="text"
+            placeholder="Paste a link"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            className="flex-grow bg-transparent text-gray-300 focus:ring-0 focus:outline-none"
+          />
+          <button className="ml-2 bg-gray-200 hover:opacity-75 p-2 rounded-full">
+            <FaArrowRight className="text-gray-900" />
+          </button>
+        </form>
+        {loading && <p className="mt-2 text-gray-300">Loading...</p>}
+        {error && <p className="mt-2 text-red-500">{error}</p>}
+      </div>
     </div>
-  )
+  );
+
 }
 
 export default SummarizeArticle;
