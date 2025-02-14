@@ -72,7 +72,7 @@ def extract_main_content(html):
   selecting the one with the largest block of text that does not appear
   to be navigational.
   """
-  soup = BeautifulSoup(html, 'html.parser')
+  soup = BeautifulSoup(html, 'html.parser', from_encoding='utf-8')
 
   # Remove generally rubbish tags
   for tag in soup(["script", "style", "noscript"]):

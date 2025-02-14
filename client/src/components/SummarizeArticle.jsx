@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { FaArrowRight } from "react-icons/fa6";
+import { FaArrowRight, FaSpinner } from "react-icons/fa6";
 
 
 const SummarizeArticle = ({ isLoggedIn, userId }) => {
@@ -75,7 +75,7 @@ const SummarizeArticle = ({ isLoggedIn, userId }) => {
 
   if (summary && fullArticle) {
     return (
-      <div className="flex flex-col min-h-screen p-4 text-left">
+      <div className="flex flex-col p-4 text-left">
         <h1 className="text-3xl font-bold text-gray-300 mb-4">Summarized Article</h1>
         <div className="bg-gray-700 p-4 rounded-lg mb-4">
           <h2 className="font-bold text-lg text-white">AI Summary:</h2>
@@ -96,10 +96,10 @@ const SummarizeArticle = ({ isLoggedIn, userId }) => {
 
   // Otherwise, show the input view.
   return (
-    <div className="flex flex-col h-screen justify-center items-center">
-      <h1 className="text-3xl font-bold text-gray-300 mb-4">Summarize an Article</h1>
-      <div className="w-full max-w-md">
-        <form onSubmit={handleSubmit} className="flex bg-gray-800 p-3 rounded-lg">
+    <div className="flex flex-col items-center justify-center">
+      <h1 className="text-3xl font-semibold text-gray-300 mb-4">Summarize an article.</h1>
+      <div className="w-full mx-auto">
+        <form onSubmit={handleSubmit} className="flex bg-gray-800 grayscale p-3 rounded-2xl items-center w-[512px]">
           <input
             type="text"
             placeholder="Paste a link"
@@ -108,10 +108,14 @@ const SummarizeArticle = ({ isLoggedIn, userId }) => {
             className="flex-grow bg-transparent text-gray-300 focus:ring-0 focus:outline-none"
           />
           <button className="ml-2 bg-gray-200 hover:opacity-75 p-2 rounded-full">
-            <FaArrowRight className="text-gray-900" />
+            {loading ? (
+              <FaSpinner className="text-gray-900 animate-spin" />
+            ) : (
+              <FaArrowRight className="text-gray-900" />
+            )
+            }
           </button>
         </form>
-        {loading && <p className="mt-2 text-gray-300">Loading...</p>}
         {error && <p className="mt-2 text-red-500">{error}</p>}
       </div>
     </div>
