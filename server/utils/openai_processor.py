@@ -56,18 +56,18 @@ def categorize_article(text: str, user_categories: list):
   Returns:
     - "category": The assigned or newly created category.
     - "is_new_category": Boolean indicating if a new category was created.
+    - "emoji": An emoji representing the category.
   """
   categories_str = ', '.join(user_categories) if user_categories else "None"
 
   prompt = (
-    "You are an AI that categorizes articles based on user-provided categories.\n\n"
+    "You are an AI that categorizes articles based on user-provided categories and generates a matching emoji for the category.\n\n"
     "Instructions:\n"
-    "1. Given the following user-generated categories: " + categories_str + ", "
-    "determine if the article fits into one of these categories.\n"
-    "   - If it does, return the category exactly as provided.\n"
-    "   - If it does not, suggest a new category using a **single word**.\n\n"
+    "1. Given the following user-generated categories: " + categories_str + ", determine if the article fits into one of these categories.\n"
+    "   - If it does, return the category exactly as provided and a matching emoji that represents that category.\n"
+    "   - If it does not, suggest a new category using a **single word** and provide a matching emoji for that category.\n\n"
     "Return the response in JSON format:\n"
-    "{ \"category\": \"SelectedCategory\" }\n\n"
+    "{ \"category\": \"SelectedCategory\", \"emoji\": \"MatchingEmoji\" }\n\n"
     "Article Text:\n" + text
   )
 
@@ -75,11 +75,11 @@ def categorize_article(text: str, user_categories: list):
     response = client.chat.completions.create(
       model="gpt-3.5-turbo",
       messages=[
-        {"role": "system", "content": "You categorize articles based on user categories."},
+        {"role": "system", "content": "You categorize articles based on user categories and generate an appropriate emoji for the category."},
         {"role": "user", "content": prompt}
       ],
       temperature=0.5,
-      max_tokens=50
+      max_tokens=60
     )
 
     answer_str = response.choices[0].message.content
@@ -99,7 +99,8 @@ def categorize_article(text: str, user_categories: list):
     final_category, is_new = assign_category(predicted_category, user_categories)
     result["category"] = final_category
     result["is_new_category"] = is_new
-
+    if "emoji" not in result or not result["emoji"]:
+      result["emoji"] = "❓"
   return result
 
 # ---------------------------- DUPLICATE DETECTION ---------------------------- #

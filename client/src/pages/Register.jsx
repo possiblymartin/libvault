@@ -51,17 +51,6 @@ const Register = () => {
               className="w-full border rounded p-2"
             />
           </div>
-          <div className="mb-3">
-            <label>Full Name</label>
-            <input
-              type="text"
-              name="full_name"
-              value={formData.full_name}
-              onChange={handleChange}
-              required
-              className="w-full border rounded p-2"
-            />
-          </div>
           <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
             Register
           </button>

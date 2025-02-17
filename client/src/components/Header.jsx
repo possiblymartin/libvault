@@ -7,7 +7,7 @@ const Header = () => {
     <header className="px-6 py-4 w-full text-md flex items-center justify-between">
       {/* Left Section */}
       <div className="flex items-center space-x-8">
-        <div className="text-xl font-medium text-gray-300">libvault</div>
+        <div className="text-xl font-medium text-gray-300"><a href="/">libvault</a></div>
       </div>
       {/* Right Section */}
       <div className="space-x-2">

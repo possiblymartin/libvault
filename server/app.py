@@ -54,9 +54,9 @@ def create_app():
 	from api.articles import articles_bp
 	from api.auth import auth_bp
 
+	app.register_blueprint(auth_bp, url_prefix='/api/auth')
+	app.register_blueprint(articles_bp, url_prefix='/api/auth')
 	app.register_blueprint(routes)
-	app.register_blueprint(articles_bp)
-	app.register_blueprint(auth_bp)
 
 	# ----------------- HEALTH CHECK ROUTE ----------------- #
 	@app.route('/health', methods=['GET'])

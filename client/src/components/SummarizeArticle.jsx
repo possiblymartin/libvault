@@ -77,7 +77,7 @@ const SummarizeArticle = ({ isLoggedIn, userId }) => {
     return (
       <div className="flex flex-col p-4 text-left">
         <h1 className="text-3xl font-bold text-gray-300 mb-4">Summarized Article</h1>
-        <div className="bg-gray-700 p-4 rounded-lg mb-4">
+        <div className="bg-gray-700 p-4 rounded-lg mb-4 grayscale">
           <h2 className="font-bold text-lg text-white">AI Summary:</h2>
           <ul className="list-disc list-inside text-gray-300">
             {summary.map((point, index) => (
@@ -85,7 +85,7 @@ const SummarizeArticle = ({ isLoggedIn, userId }) => {
             ))}
           </ul>
         </div>
-        <div className="bg-gray-800 p-4 rounded-lg text-gray-300 mb-4">
+        <div className="bg-gray-800 p-4 rounded-lg text-gray-300 mb-4 grayscale">
           <h2 className="font-bold text-lg text-white">Full Article:</h2>
           <p className="whitespace-pre-wrap">{fullArticle}</p>
         </div>

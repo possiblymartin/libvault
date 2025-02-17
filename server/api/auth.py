@@ -19,7 +19,7 @@ def register():
   if not email or not password:
     return jsonify({'error': 'Email and password are required'}), 400
 
-  existing_user = User.query.filter_by(email).first()
+  existing_user = User.query.filter_by(email=email).first()
   if existing_user:
     return jsonify({'error': 'A user with this email already exists'}), 400
 
@@ -31,7 +31,7 @@ def register():
   return jsonify({'message': 'User created successfully'}), 201
 
 # Login user
-@auth_bp.route('/login', methods=['GET'])
+@auth_bp.route('/login', methods=['POST'])
 def login():
   data = request.get_json()
   email = data.get('email')
