@@ -4,6 +4,11 @@ import uuid
 
 routes = Blueprint('routes', __name__)
 
+@routes.route('/categories', methods=['GET'])
+def get_categories():
+  categories = Category.query.all()
+  return jsonify([{'id': cat.id, 'name': cat.name} for cat in categories])
+
 # Create a new category if it doesn't exist
 @routes.route('/categories', methods=['POST'])
 def create_category():

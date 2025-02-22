@@ -11,6 +11,8 @@ const Dashboard = () => {
   const [showCategoryForm, setShowCategoryForm] = useState('');
 
   useEffect(() => {
+    fetchCategories();
+    fetchArticles();
 
   }, [])  
 
