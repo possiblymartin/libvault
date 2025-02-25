@@ -1,11 +1,26 @@
-from flask import Blueprint, request, jsonify
-from models.models import db, Article, Category
+from flask import Blueprint, request, jsonify, g
+from flask_jwt_extended import jwt_required, get_jwt_identity
 import requests
+from models.models import db, Article, Category
 from utils.openai_processor import process_article
 from utils.text_helpers import extract_main_content
-import uuid
 
 articles_bp = Blueprint('articles', __name__)
+
+@articles_bp.before_request
+def get_current_user():
+  if request.method == "OPTIONS":
+    return
+
+  if request.path == '/api/articles/public':
+    return
+  
+  token = request.headers.get('Authorization', '').replace('Bearer ', '')
+  if not token:
+    return jsonify({'error': 'Authentication required'}), 401
+  
+  try:
+    user_id = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
 
 # Add a new article with auto-category creation
 @articles_bp.route('/articles', methods=['GET', 'POST'])

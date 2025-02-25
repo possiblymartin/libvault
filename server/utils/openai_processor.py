@@ -6,10 +6,13 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise ValueError("OPENAI_API_KEY environment variable is not set")
+
+client = OpenAI(api_key=api_key)
 
 # ---------------------------- CATEGORY FUNCTIONS ---------------------------- #
-
 def normalize_category(category: str) -> str:
   """
   Normalizes category names by stripping whitespace and using only the first word 
@@ -17,7 +20,6 @@ def normalize_category(category: str) -> str:
   """
   words = category.strip().split()
   return words[0] if len(words) > 1 else category.strip()
-
 
 def assign_category(predicted_category: str, user_categories: list, threshold: float = 0.7):
   """
@@ -44,7 +46,6 @@ def assign_category(predicted_category: str, user_categories: list, threshold: f
   # No match found, create a new category
   new_category = normalize_category(predicted_category)
   return new_category, True
-
 
 def categorize_article(text: str, user_categories: list):
   """
@@ -104,7 +105,6 @@ def categorize_article(text: str, user_categories: list):
   return result
 
 # ---------------------------- DUPLICATE DETECTION ---------------------------- #
-
 def is_duplicate_article(new_text: str, existing_articles: list, similarity_threshold: float = 0.9):
   """
   Checks if the new article is a duplicate of an existing one using a similarity comparison.
@@ -124,7 +124,6 @@ def is_duplicate_article(new_text: str, existing_articles: list, similarity_thre
   return False  # No duplicate found
 
 # ---------------------------- SUMMARIZATION & TAGGING ---------------------------- #
-
 def summarize_and_tag(text: str):
   """
   Summarizes the article and generates relevant tags.
@@ -138,6 +137,7 @@ def summarize_and_tag(text: str):
     - "summary": List of 3 bullet points summarizing the article.
     - "tags": Suggested tags as a list of strings.
   """
+
   prompt = (
     "You are an AI assistant that summarizes and tags articles.\n\n"
     "Instructions:\n"
@@ -166,19 +166,18 @@ def summarize_and_tag(text: str):
 
     answer_str = response.choices[0].message.content
 
-    # Ensure JSON is properly formatted
-    if answer_str.startswith("```"):
-      answer_str = re.sub(r"^```(json)?\n", "", answer_str)
-      answer_str = re.sub(r"\n```", "", answer_str)
-
-    result = json.loads(answer_str)
+    match = re.search(r'({.*})', answer_str, re.DOTALL)
+    if match:
+      result = json.loads(match.group(1))
+    else:
+      return result
+    
+  except json.JSONDecodeError as e:
+    return {"error": f"Failed to parse JSON response: {str(e)}"}
   except Exception as e:
-    return {"error": f"OpenAI summarization failed: {str(e)}"}
-
-  return result
+    return {"error": f"OpenAI summarization failed: {str(e.__class__.__name__): {str(e)}}"}
 
 # ---------------------------- FINAL PROCESSING FUNCTION ---------------------------- #
-
 def process_article(text: str, user_categories: list):
   """
   Main function that processes an article by:
